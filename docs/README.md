@@ -288,5 +288,8 @@ You are allowed to submit as many times as you want up until the deadline; so su
 
 6. The map phase of the crawler workflow is by nature async. What do I do
      - As the crawler workflow depends mostly on  `map` (it's `map` that's mostly useful here,  `reduce` doesn't do much), you could simply invoke asynchronous functions (that will write to the file system) and return an immediate list of keys
-  
-   
+
+7. What libraries can I use?
+    - Generally any standard libraries and any libraries used in M0 are allowed.
+    - If you would like to incorporate any external libraries in your project, please ask on EdStem.
+      As long as the given library does not implement/abstract away some part of the milestones, we may allow it.
