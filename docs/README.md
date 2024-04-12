@@ -278,8 +278,8 @@ You are allowed to submit as many times as you want up until the deadline; so su
       - Once your map-reduce service works, registering/deregistering can be done by adding an 'interceptor' in the listening loop in `local/node.js` before `local.routes.get`
 
 3. How to import modules/packages for workflows
-    - Import it in `distribution.js`, and set global.<module> = require(<module>)` -- this will give all nodes access to the module. When using the module, you should use `global.<module>`
-    - Importing in `local/node.js` might work as well
+    - Import it in `distribution.js`, and set `global.<module> = require(<module>)`. This will add a reference to the module in global scope, meaning it can be used inside remote functions. 
+      When using the module, you should use `global.<module>`
 
 4. What does `notify` do, how does it differ from `comm.send` continuation, how to implement it
 
