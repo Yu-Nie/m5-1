@@ -144,6 +144,18 @@ In this implementation, the coordinator node is the one initiating the MapReduce
 
 After creating these services (and storing identifiers such as mr-t25w7Gg2Zc somewhere to be able to clear them at the very end of a MapReduce workflow), the system sends the functions corresponding to the map and reduce phases to all nodes in the group. One option here is to use a standard local.mr endpoint to achieve that.
 
+Another possible approach to notify is to use all.comm.send to initiate first phase and start next phase upon recieving back from previous phase.
+```group.comm.send(..., {service:'some_unique_service', method:'map'), ... ,(e,v)=>{
+    group.comm.send(..., (service: 'some_unique_service', method: "shuffle'), ... ,(e,v)=>{
+        group.comm.send(..., {service:"some_unique_service', method: 'reduce'), ... ,(e,v)=>{
+            aggregation});
+        });
+    });
+});```
+
+Wrap your functions so that node knows how to process each phase.
+`service[mr_unique][map] = wrapperMap`
+
 **Map Phase.** When setup completes, the coordinator sends a message to all the Mappers to initiate the Map phase of the computation. The service running on every node fetches the relevant objects from the local storage system, and passes each key and corresponding object to the map function. The node stores results locally, using appropriate local.store interfaces. When this phase is complete, the node notifies the coordinator. This phase should take about the same time for all nodes, assuming data is evenly distributed across nodes.
 
 **Shuffle Phase.** After the coordinator receives notifications that all nodes have completed their mapping phase, it proceeds to ask nodes to move to shuffling. Nodes use hashing to send each key-value pair resulting from the map computation to the node responsible for collecting that result. This phase may additionally leverage node-local compaction optimizations. 
@@ -259,7 +271,7 @@ Make sure you study the provided test cases — their inputs and outputs usually
 Execute eslint frequently, and use the --fix flag to correct some of the style errors automatically.
 Test your implementation using your own MapReduce workflows!
 
-To create a submission, run s/submit.sh from the root folder of M4. This will create a submission.zip file which you will then upload to Gradescope (select "managed submission" and then upload your zip manually). The zip archive will contain a javascript/src/main folder inside which all the files tracked by git and found to be modified. Make sure to git commit any new files you have created before running the submit script; the s/submit.sh script will not include any untracked files in the submission.
+To create a submission, run s/submit.sh from the root folder of M5. This will create a submission.zip file which you will then upload to Gradescope (select "managed submission" and then upload your zip manually). The zip archive will contain a javascript/src/main folder inside which all the files tracked by git and found to be modified. Make sure to git commit any new files you have created before running the submit script; the s/submit.sh script will not include any untracked files in the submission.
 
 You are allowed to submit as many times as you want up until the deadline; so submit early and often. For full grade, before submitting the final version of your code make sure that (1) all linters run without any errors, (2) the provided tests run without any errors, and (3) you have provided an additional five or more tests with your implementation.
 ```
@@ -272,7 +284,11 @@ You are allowed to submit as many times as you want up until the deadline; so su
 
 2. I am using the obfuscated code, and I cannot add new methods to `store` or `route`
     - For `store`, you can always just use `store.get` and `store.put`. `store.append` is just an "easier" approach (abstraction-wise)
-      - and since `append` just abstracts away de-duplication/grouping values with the same key, alternatively, you can just keep things in an object/map in memory, and flush them to disk at the end of the phase
+      - and since `append` just abstracts away de-duplication/grouping values with the same key, alternatively, you can just keep things in an object/map in memory, and flush them to disk at
+    - For `route`, you only need to replace with your `all.route.js` to register.
+      - a less decent way is to handle services in `local.node.js` as all work is done on node.
+  
+the end of the phase
     - For deregistering (`route`)
       - You don't really need to worry about deregistering for testing purposes. Feel free to work on other parts first
       - Once your map-reduce service works, registering/deregistering can be done by adding an 'interceptor' in the listening loop in `local/node.js` before `local.routes.get`
@@ -288,6 +304,7 @@ You are allowed to submit as many times as you want up until the deadline; so su
 
 6. The map phase of the crawler workflow is by nature async. What do I do
      - As the crawler workflow depends mostly on  `map` (it's `map` that's mostly useful here,  `reduce` doesn't do much), you could simply invoke asynchronous functions (that will write to the file system) and return an immediate list of keys
+     - if fail to get value, try wrap your map function with `Promise.resolve(map-function).then(further implemetation on the result)`.
 
 7. What libraries can I use?
     - Generally any standard libraries and any libraries used in M0 are allowed.
